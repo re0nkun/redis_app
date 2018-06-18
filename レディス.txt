@@ -1,0 +1,26 @@
+redis:
+    image: redis:latest
+    ports:
+      - 6379:6379
+  web:
+    ......
+    links:
+      - db
+      - redis
+    environment:
+      REDIS_URL: redis://redis:6379
+
+gem 'redis'
+
+// config/initializers/redis.rb
+  REDIS ||= Redis.new(url: ENV['REDIS_URL'] || 'redis://localhost:6379')
+
+def show
+    @user = User.find(params[:id])
+    REDIS.zincrby "users/all", 1, "#{@user.id}"
+end
+
+def index
+    ids = REDIS.zrevrange "users/all", 0, -1
+    @users_rankings = ids.map{ |id| User.find(id) }
+end

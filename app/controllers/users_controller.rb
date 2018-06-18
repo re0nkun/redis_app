@@ -5,11 +5,20 @@ class UsersController < ApplicationController
   # GET /users.json
   def index
     @users = User.all
+
+    # ids = REDIS.zrevrange "users/all/", 0, -1
+    @ids_withscores = REDIS.zrevrange "users/all/", 0, -1, withscores: true
+    ids = @ids_withscores.map{|n| n[0]}
+    # ids = REDIS.zrevrange "users/daily/#{Date.today.to_s}", 0, -1
+    @user_rankings = ids.map{ |id| User.find(id) }
   end
 
   # GET /users/1
   # GET /users/1.json
   def show
+    @user = User.find(params[:id])
+    REDIS.zincrby "users/all/", 1, "#{@user.id}"
+    # REDIS.zincrby "users/daily/#{Date.today.to_s}", 1, "#{@user.id}"
   end
 
   # GET /users/new
